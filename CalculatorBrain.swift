@@ -1,19 +1,39 @@
+//
+//  File.swift
+//  Culculator3-61
+//
+//  Created by xcode on 11.09.17.
+//  Copyright © 2017 VSU. All rights reserved.
+//
+// 44
+
 import Foundation
 
-class CalculatorBrain
+private func factorial(digit: Double) -> Double
 {
-    public var result: Double { get { return accumulator } } 
+    var res: Double = 1
+    var i: Double = 2
+    while i <= digit
+    {
+        res *= i
+        i += 1
+    }
+    return res
+}
+class CalculatorBrain {
+    
+    public var result: Double { get { return accumulator } }
     public var description: String { get { return pastValue + currentValue } }
     public var isPartialResult: Bool { get { return pending != nil } }
-
-    public var variable: Double { didSet { program = internalProgram as CalculatorBrain.PropertyList } }
-
+    
+    public var variable: Double = 0.0 { didSet { program = internalProgram as CalculatorBrain.PropertyList } }
+    
     private var accumulator = 0.0
     private var pending: PendingBinaryOperationInfo?
     private var currentValue: String = ""
     private var pastValue: String = ""
     private var internalProgram = [AnyObject]()
-
+    
     private var operations: Dictionary<String, Operation> =
         [
             "π" : Operation.Constant(Double.pi),
@@ -35,9 +55,9 @@ class CalculatorBrain
             "+" : Operation.BinaryOperation({ $0 + $1 }),
             "-" : Operation.BinaryOperation({ $0 - $1 }),
             "=" : Operation.Equals
-        ]
-
-    private struct PendingBinaryOperationInfo 
+    ]
+    
+    private struct PendingBinaryOperationInfo
     {
         var binaryFunction: (Double, Double)->Double
         var firstOperand: Double
@@ -52,7 +72,7 @@ class CalculatorBrain
     }
     
     typealias PropertyList = AnyObject
-    private var program: PropertyList 
+    private var program: PropertyList
     {
         get { return internalProgram as CalculatorBrain.PropertyList }
         set
@@ -60,7 +80,7 @@ class CalculatorBrain
             clear()
             if let arrayOfOps = newValue as? [AnyObject]
             {
-                for op in arrayOfOps 
+                for op in arrayOfOps
                 {
                     if let operand = op as? Double
                     {
@@ -68,13 +88,13 @@ class CalculatorBrain
                     }
                     else if let operation = op as? String
                     {
-                        if operations[operation] != nil 
+                        if operations[operation] != nil
                         {
                             perfomOperation(symbol: operation)
-                        } 
-                        else 
+                        }
+                        else
                         {
-                            setOperand(variable: operation)
+                            setOperand()
                         }
                     }
                 }
@@ -86,12 +106,12 @@ class CalculatorBrain
     {
         if (operand != accumulator) || isPartialResult
         {
-            currentValue = withoutDot(digit: String(operand))
+            currentValue = String(operand)
         }
         internalProgram.append(operand as AnyObject)
         accumulator = operand
     }
-
+    
     public func setOperand()
     {
         accumulator = variable
@@ -107,36 +127,36 @@ class CalculatorBrain
         {
             switch operation
             {
-                case.Constant(let value): 
-                    accumulator = value
-                    currentValue = symbol
-                case.UnaryOperation(let function):
-                    currentValue = symbol + "(" + currentValue + ")"
-                    accumulator = function(accumulator)
-                case.BinaryOperation(let function):
-                    pastValue = pastValue + currentValue + symbol
-                    currentValue = ""
-                    executePendingBinaryOperation()
-                    pending = PendingBinaryOperationInfo(binaryFunction: function,firstOperand: accumulator)
-                case.Equals:
-                    currentValue = pastValue + currentValue
-                    pastValue = ""
-                    executePendingBinaryOperation()
+            case.Constant(let value):
+                accumulator = value
+                currentValue = symbol
+            case.UnaryOperation(let function):
+                currentValue = symbol + "(" + currentValue + ")"
+                accumulator = function(accumulator)
+            case.BinaryOperation(let function):
+                pastValue = pastValue + currentValue + symbol
+                currentValue = ""
+                executePendingBinaryOperation()
+                pending = PendingBinaryOperationInfo(binaryFunction: function,firstOperand: accumulator)
+            case.Equals:
+                currentValue = pastValue + currentValue
+                pastValue = ""
+                executePendingBinaryOperation()
             }
         }
     }
-
-    public func undoLast() 
+    
+    public func undoLast()
     {
-        if !internalProgram.isEmpty   
-        { 
-            clear (); 
-            return 
+        if !internalProgram.isEmpty
+        {
+            clear ();
+            return
         }
         internalProgram.removeLast()
         program = internalProgram as CalculatorBrain.PropertyList
     }
-
+    
     public func clear()
     {
         internalProgram.removeAll()
@@ -146,21 +166,6 @@ class CalculatorBrain
         pastValue = ""
     }
     
-    private func withoutDot(digit: String)->String
-    {
-        let index = digit.index(of:".") ?? digit.endIndex
-        let sub = String(digit[index .. <digit.endIndex])
-        
-        if (sub == ".0")
-        {
-            return String(digit[digit.startIndex .. <index]);
-        }
-        else
-        {
-            return digit
-        }
-    }
-    
     private func executePendingBinaryOperation()
     {
         if pending != nil
@@ -168,17 +173,5 @@ class CalculatorBrain
             accumulator = pending!.binaryFunction(pending!.firstOperand, accumulator)
             pending = nil
         }
-    }
-
-    private func factorial(digit: Double) -> Double 
-    {
-        var res: Double = 1
-        var i: Double = 2
-        while i <= digit 
-        {
-            res *= i
-            i += 1
-        }
-        return res
     }
 }
